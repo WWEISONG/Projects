@@ -1,0 +1,81 @@
+
+******* 1 *******
+(a)
+terminals: or, and, not, true, false, ( )
+nonterminals: bexpr, bterm, bfactor
+start symbol: bexpr
+(b)
+// should start with the start symbol
+bfactor -> not bfactor
+        -> not ( bexpr )
+        -> not ( bexpr or bterm )
+        -> not ( bterm or bterm )
+        -> not ( bterm and bfactor or bterm )
+        -> not ( bfactor and bfactor or bterm )
+        -> not ( false and bfactor or bterm )
+        -> not ( false and true or bterm )
+        -> not ( false and true or bfactor )
+        -> not ( false and true or true )
+(c)
+bfactor -> not bfactor
+        -> not ( bexpr )
+        -> not ( bexpr or bterm )
+        -> not ( bexpr or bfactor )
+        -> not ( bexpr or true )
+        -> not ( bterm or true )
+        -> not ( bterm and bfactor or true )
+        -> not ( bterm and true or true )
+        -> not ( bfactor and true or true )
+        -> not ( false and true or true )
+(d)
+(e)
+and > or > not?
+what is the associativity? 
+and or, are left associative
+
+
+******* 2 *******
+(a)
+bfactor -> not bfactor
+        -> not ( bexpr )
+        -> not ( bexpr and bterm )
+        -> not ( bterm and bterm )
+        -> not ( bfactor and bterm )
+        -> not ( false and bterm )
+        -> not ( false and bterm or bfactor )
+        -> not ( false and bfactor or bfactor )
+        -> not ( false and true or bfactor )
+        -> not ( false and true or true )
+
+precedence should be: and < or
+
+******* 3 *******
+bfactor -> not bfactor
+        -> not ( bexpr )
+        -> not ( bexpr or bfactor )
+        -> not ( bexpr and bfactor or bfactor )
+        -> not ( bfactor and bfactor or bfactor )
+        -> not ( false and true or true )
+
+NO(both leftmost-derivation and rightmost-derivation only one case)
+associativity not change
+
+******* 4 *******
+bexpr -> not bexpr
+      -> not ( bexpr )
+      -> not ( bexpr and bexpr )
+      -> not ( false and bexpr )
+      -> not ( false and bexpr or bexpr )
+      -> not ( false and true or bexpr )
+      -> not ( false and true or true )
+
+bexpr -> not bexpr
+      -> not ( bexpr )
+      -> not ( bexpr or bexpr )
+      -> not ( bexpr and bexpr or bexpr )
+      -> not ( false and bexpr or bexpr )
+      -> not ( false and true or bexpr )
+      -> not ( false and true or ture )
+
+NOT SURE
+associativity also can ambiguous
