@@ -27,11 +27,13 @@ public class Dht {
     int countAliveFirstS;// count of alive message from first succ
     int countAliveSecondS;// count of alive message from second succ
     int interval;// request-response message interval
+    int filePeerID;// store peer id who has the original file
     Boolean state;// my own state--alive/true, dead/false
     Boolean firstSuccState;// state of first successor
     Boolean secondSuccState;// state of second successor
 
     public Dht(int peerID, int firstSucc, int secondSucc, int interval) {
+        
         this.peerID = peerID;
         this.firstSucc = firstSucc;
         this.secondSucc = secondSucc;
@@ -155,7 +157,7 @@ public class Dht {
         File fileToSend = new File(fileNameStr);
         File fileToSendCopy = new File(fileNameStrCopy);
 
-        if (hashFilename == peerID && fileToSend.exists()) {
+        if (hashFilename == filePeerID && fileToSend.exists()) {
             find_file_and_send(fileToSend, fileName, requestPeer);
             return;
         }
@@ -422,7 +424,7 @@ public class Dht {
                             System.out.printf("Received a response message from peer %d, which has the file %d.",
                                     myPeerID, Integer.parseInt(allMess[0]));
                             System.out.println("Start receiving the file...");
-                        }
+                        } else if (allMess[1].equals)
                     } else if (messageArray[0].equals("file_block")) {
                         File receiveFile = new File("assignment/" + allMess[0] + "copy.txt");
                         if (!receiveFile.exists()) {
