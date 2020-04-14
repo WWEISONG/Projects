@@ -43,7 +43,7 @@ public class Dht {
         this.secondPredecessor = 300;
         this.countAliveFirstS = 0;
         this.countAliveSecondS = 0;
-        this.state = true;
+        this.state = false;
         this.firstSuccState = false;
         this.secondSuccState = false;
 
@@ -54,7 +54,7 @@ public class Dht {
      * IP address is localhost and port number is peerid + 20000
      * usage: request file, gracefully quit 
      */
-    private void send_tcp_message(String message, int dest) throws IOException {
+    public void send_tcp_message(String message, int dest) throws IOException {
 
         Socket socket = new Socket("127.0.0.1", dest);
         OutputStream outSendForRequester = socket.getOutputStream();
@@ -63,6 +63,12 @@ public class Dht {
         outSendForRequester.flush();
         outSendForRequester.close();
         socket.close();
+    }
+
+    public void join_request(int nextPeer) throws IOException {
+
+        String message = "message join_requst message " + peerID;
+        send_tcp_message(message, nextPeer+20000);
     }
 
     /**
@@ -150,7 +156,6 @@ public class Dht {
     private void retrive_file(int fileName, int requestPeer) throws IOException {
 
         int hashFilename = hash_function(fileName);
-        int requesterPeerID = requestPeer - 20000;
         String fileNameStr = "assignment/" + String.valueOf(fileName) + ".txt";
         String fileNameStrCopy = "assignment/" + String.valueOf(fileName) + "copy.txt";
         // retrive if there is copy version or not under this peer
@@ -305,9 +310,7 @@ public class Dht {
      * UDP receiver server needs to handle: 
      * 1. ping request message 
      * 2. ping response message 
-     * 3. request file message
-     * 4. alive_request and alive_response
-     * 5. receive files and stop-wait
+     * 3. alive_request and alive_response
      */
     public class UDPReceiver extends Thread {
 
@@ -384,6 +387,8 @@ public class Dht {
      * TCP receiver Thread, it's functions:
      * 1. handle normal leave of peers
      * 2. handle abnormal leave of peers
+     * 3. new peers join request message
+     * 4. file transfer
      */
     public class TCPReceiver extends Thread {
 
@@ -420,18 +425,22 @@ public class Dht {
                         } else if (messageArray[1].equals("response_for_leave")) {
                             firstSucc = Integer.parseInt(messageArray[1]);
                             secondSucc = Integer.parseInt(messageArray[2]);
-                        } else if (allMess[1].equals("file_response")){
+                        } else if (messageArray[1].equals("file_response")){
                             System.out.printf("Received a response message from peer %d, which has the file %d.",
-                                    myPeerID, Integer.parseInt(allMess[0]));
+                                    myPeerID, Integer.parseInt(messageArray[0]));
                             System.out.println("Start receiving the file...");
-                        } else if (allMess[1].equals)
+                        } else if (messageArray[1].equals("join_request")) {
+                            // handle join request
+                        } else if (messageArray[1].equals("join_success")) {
+                            // handle join success
+                        }
                     } else if (messageArray[0].equals("file_block")) {
-                        File receiveFile = new File("assignment/" + allMess[0] + "copy.txt");
+                        File receiveFile = new File("assignment/" + messageArrays[0] + "copy.txt");
                         if (!receiveFile.exists()) {
                             receiveFile.createNewFile();
                         }
                         FileOutputStream fos = new FileOutputStream(receiveFile, true);
-                        fos.write(recData);
+                        fos.write(buf);
                         fos.close();
                     }
                 }
@@ -485,30 +494,37 @@ public class Dht {
         int succssorTwo = 300;
         int interval = 30;
 
+        /** initially we don't know if this peer is "init" or join, so we init it's two 
+         *  successors as FAKE peers say their ID are not EXIST (a number is bigger than
+         *  256 for we totally could 256 peers), here I choose 300
+        */
+        Dht mydht = new Dht(peerID, succssorOne, succssorTwo, interval);
+        Dht.TCPReceiver tcpServerThread = mydht.new TCPReceiver();
+        tcpServerThread.start();
+
         if (operation.equals("init")) {
             succssorOne = Integer.parseInt(argv[2]);
             succssorTwo = Integer.parseInt(argv[3]);
             interval = Integer.parseInt(argv[4]);
         } else if (operation.equals("join")) {
             interval = Integer.parseInt(argv[3]);
+            mydht.join_request(Integer.parseInt(argv[2]));
         } else {
             System.out.println("Cannot provide this kind service :)");
         }
 
-        Dht mydht = new Dht(peerID, succssorOne, succssorTwo, interval);
-
         Dht.PingRequestSender sendThread = mydht.new PingRequestSender();
         Dht.UDPReceiver receiverThread = mydht.new UDPReceiver();
         Dht.InputInfo inputInfoThread = mydht.new InputInfo();
-        Dht.TCPReceiver tcpServerThread = mydht.new TCPReceiver();
         Dht.FailureMonitoring failureMonitoring = mydht.new FailureMonitoring();
         Dht.PingAlive pingAlive = mydht.new PingAlive();
 
-        sendThread.start();
-        receiverThread.start();
-        inputInfoThread.start();
-        tcpServerThread.start();
-        failureMonitoring.start();
-        pingAlive.start();
+        if (mydht.state) {
+            sendThread.start();
+            receiverThread.start();
+            inputInfoThread.start();
+            failureMonitoring.start();
+            pingAlive.start();
+        }
     } 
 }
